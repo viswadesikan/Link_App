@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Event Listeners
   logoutBtn.addEventListener('click', () => {
     localStorage.removeItem('token');
-    window.location.href = 'index.html';
+    window.location.href = '/';
   });
   
   addFolderBtn.addEventListener('click', () => {
@@ -139,7 +139,59 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
   
-  // Functions
+  // Folder and Link Management Functions
+  async function deleteFolder(folderId) {
+    if (!confirm('Are you sure you want to delete this folder and all its links?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/folders/${folderId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete folder');
+      }
+
+      await loadFolders();
+    } catch (err) {
+      showError(err.message || 'Failed to delete folder');
+      console.error('Delete folder error:', err);
+    }
+  }
+
+  async function deleteLink(folderId, linkIndex) {
+    if (!confirm('Are you sure you want to delete this link?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/folders/${folderId}/links/${linkIndex}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete link');
+      }
+
+      // Reload the current links view
+      const folderName = document.querySelector('.folder-title').textContent;
+      await showLinks(folderId, folderName);
+    } catch (err) {
+      showError(err.message || 'Failed to delete link');
+      console.error('Delete link error:', err);
+    }
+  }
+
   async function loadFolders() {
     try {
       const response = await fetch('/api/folders', {
@@ -162,12 +214,27 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   function renderFolders(folders) {
-    foldersContainer.innerHTML = ''; // Clear all
+    // Clear existing folders but preserve the add folder button
+    const existingAddBtn = foldersContainer.querySelector('.add-folder');
+    foldersContainer.innerHTML = '';
     
-    // Add the "+" button first
-    foldersContainer.appendChild(addFolderBtn);
+    if (existingAddBtn) {
+      foldersContainer.appendChild(existingAddBtn);
+    } else {
+      const addBtn = document.createElement('div');
+      addBtn.className = 'add-folder';
+      addBtn.id = 'add-folder-btn';
+      addBtn.innerHTML = '<i class="fas fa-plus"></i>';
+      foldersContainer.appendChild(addBtn);
+      
+      // Reattach event listener for the add button
+      addBtn.addEventListener('click', () => {
+        folderModal.style.display = 'block';
+        folderNameInput.focus();
+      });
+    }
     
-    // Add folders
+    // Add all folders
     folders.forEach(folder => {
       const folderElement = document.createElement('div');
       folderElement.className = 'folder';
@@ -175,6 +242,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const linkCount = Array.isArray(folder.links) ? folder.links.length : 0;
       
       folderElement.innerHTML = `
+        <div class="folder-actions">
+          <button class="delete-folder-btn" title="Delete folder">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
         <i class="fas fa-folder"></i>
         <span class="folder-name">${folder.name}</span>
         <span class="link-count">${linkCount} ${linkCount === 1 ? 'link' : 'links'}</span>
@@ -183,14 +255,19 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       `;
       
-      // Add click events
+      // Add event listeners
+      folderElement.querySelector('.delete-folder-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteFolder(folder._id);
+      });
+
       folderElement.addEventListener('click', (e) => {
         if (e.target.closest('.add-link')) {
           e.stopPropagation();
           currentFolderId = folder._id;
           linkModal.style.display = 'block';
           linkUrlInput.focus();
-        } else {
+        } else if (!e.target.closest('.folder-actions')) {
           showLinks(folder._id, folder.name);
         }
       });
@@ -198,207 +275,104 @@ document.addEventListener('DOMContentLoaded', () => {
       foldersContainer.appendChild(folderElement);
     });
   }
-  
-  // Add these new functions
-async function deleteFolder(folderId) {
-  if (!confirm('Are you sure you want to delete this folder and all its links?')) {
-    return;
-  }
 
-  try {
-    const response = await fetch(`/api/folders/${folderId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to delete folder');
-    }
-
-    loadFolders();
-  } catch (err) {
-    showError(err.message || 'Failed to delete folder');
-    console.error('Delete folder error:', err);
-  }
-}
-
-async function deleteLink(folderId, linkIndex) {
-  if (!confirm('Are you sure you want to delete this link?')) {
-    return;
-  }
-
-  try {
-    const response = await fetch(`/api/folders/${folderId}/links/${linkIndex}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to delete link');
-    }
-
-    // Reload the current links view
-    const folderName = document.querySelector('.folder-title').textContent;
-    showLinks(folderId, folderName);
-  } catch (err) {
-    showError(err.message || 'Failed to delete link');
-    console.error('Delete link error:', err);
-  }
-}
-
-// Update the renderFolders function to include delete button
-function renderFolders(folders) {
-  foldersContainer.innerHTML = '';
-  foldersContainer.appendChild(addFolderBtn);
-
-  folders.forEach(folder => {
-    const folderElement = document.createElement('div');
-    folderElement.className = 'folder';
-    
-    const linkCount = Array.isArray(folder.links) ? folder.links.length : 0;
-    
-    folderElement.innerHTML = `
-      <div class="folder-actions">
-        <button class="delete-folder-btn" title="Delete folder">
-          <i class="fas fa-trash"></i>
-        </button>
-      </div>
-      <i class="fas fa-folder"></i>
-      <span class="folder-name">${folder.name}</span>
-      <span class="link-count">${linkCount} ${linkCount === 1 ? 'link' : 'links'}</span>
-      <div class="add-link">
-        <i class="fas fa-plus"></i>
-      </div>
-    `;
-    
-    // Add event listeners
-    folderElement.querySelector('.delete-folder-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      deleteFolder(folder._id);
-    });
-
-    folderElement.addEventListener('click', (e) => {
-      if (e.target.closest('.add-link')) {
-        e.stopPropagation();
-        currentFolderId = folder._id;
-        linkModal.style.display = 'block';
-        linkUrlInput.focus();
-      } else if (!e.target.closest('.folder-actions')) {
-        showLinks(folder._id, folder.name);
-      }
-    });
-    
-    foldersContainer.appendChild(folderElement);
-  });
-}
-
-// Update the showLinks function to include delete buttons for links
-async function showLinks(folderId, folderName) {
-  try {
-    const response = await fetch(`/api/folders/${folderId}/links`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to load links');
-    }
-    
-    const links = await response.json();
-    
-    // Create links view
-    const main = document.querySelector('main');
-    main.innerHTML = `
-      <div class="links-view">
-        <h2 class="folder-title">${folderName}</h2>
-        <div class="links-container">
-          ${links.length ? 
-            links.map((link, index) => {
-              try {
-                const url = new URL(link);
-                return `
-                  <div class="link-item">
-                    <div class="link-content">
-                      <a href="${link}" target="_blank">${url.hostname.replace('www.', '')}</a>
-                      <span class="link-url">${link}</span>
-                    </div>
-                    <button class="delete-link-btn" data-index="${index}" title="Delete link">
-                      <i class="fas fa-trash"></i>
-                    </button>
-                  </div>
-                `;
-              } catch {
-                return `
-                  <div class="link-item">
-                    <div class="link-content">
-                      <span class="invalid-link">${link}</span>
-                    </div>
-                    <button class="delete-link-btn" data-index="${index}" title="Delete link">
-                      <i class="fas fa-trash"></i>
-                    </button>
-                  </div>
-                `;
-              }
-            }).join('') : 
-            '<p class="empty-message">No links in this folder yet</p>'}
-        </div>
-        <div class="back-button-container">
-          <button class="btn back-btn">← Back to Folders</button>
-        </div>
-      </div>
-    `;
-    
-    // Add delete event listeners
-    document.querySelectorAll('.delete-link-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const linkIndex = e.currentTarget.getAttribute('data-index');
-        deleteLink(folderId, linkIndex);
+  async function showLinks(folderId, folderName) {
+    try {
+      const response = await fetch(`/api/folders/${folderId}/links`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
-    });
-    
-    // Back button - FIXED VERSION
-    document.querySelector('.back-btn').addEventListener('click', () => {
-      // Clear the current view
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to load links');
+      }
+      
+      const links = await response.json();
+      
+      // Create links view
       const main = document.querySelector('main');
       main.innerHTML = `
-        <div class="folders-container">
-          <div class="add-folder" id="add-folder-btn">
-            <i class="fas fa-plus"></i>
+        <div class="links-view">
+          <h2 class="folder-title">${folderName}</h2>
+          <div class="links-container">
+            ${links.length ? 
+              links.map((link, index) => {
+                try {
+                  const url = new URL(link);
+                  return `
+                    <div class="link-item">
+                      <div class="link-content">
+                        <a href="${link}" target="_blank">${url.hostname.replace('www.', '')}</a>
+                        <span class="link-url">${link}</span>
+                      </div>
+                      <button class="delete-link-btn" data-index="${index}" title="Delete link">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  `;
+                } catch {
+                  return `
+                    <div class="link-item">
+                      <div class="link-content">
+                        <span class="invalid-link">${link}</span>
+                      </div>
+                      <button class="delete-link-btn" data-index="${index}" title="Delete link">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  `;
+                }
+              }).join('') : 
+              '<p class="empty-message">No links in this folder yet</p>'}
+          </div>
+          <div class="back-button-container">
+            <button class="btn back-btn">← Back to Folders</button>
           </div>
         </div>
       `;
       
-      // Reinitialize the home view
-      initHomeView();
-    });
-    
-  } catch (err) {
-    showError(err.message || 'Failed to load links');
-    console.error('Show links error:', err);
+      // Add delete event listeners
+      document.querySelectorAll('.delete-link-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const linkIndex = e.currentTarget.getAttribute('data-index');
+          deleteLink(folderId, linkIndex);
+        });
+      });
+      
+      // Back button - Fixed version
+      document.querySelector('.back-btn').addEventListener('click', async () => {
+        // Recreate the folders container structure
+        const main = document.querySelector('main');
+        main.innerHTML = `
+          <div class="folders-container">
+            <div class="add-folder" id="add-folder-btn">
+              <i class="fas fa-plus"></i>
+            </div>
+          </div>
+        `;
+        
+        // Reinitialize the home view
+        foldersContainer = document.querySelector('.folders-container');
+        addFolderBtn = document.getElementById('add-folder-btn');
+        
+        // Reattach event listeners
+        addFolderBtn.addEventListener('click', () => {
+          folderModal.style.display = 'block';
+          folderNameInput.focus();
+        });
+        
+        // Reload folders
+        await loadFolders();
+      });
+      
+    } catch (err) {
+      showError(err.message || 'Failed to load links');
+      console.error('Show links error:', err);
+    }
   }
-}
 
-// Add this new function
-function initHomeView() {
-  // Re-get DOM elements since we recreated them
-  const addFolderBtn = document.getElementById('add-folder-btn');
-  const foldersContainer = document.querySelector('.folders-container');
-  
-  // Reattach event listeners
-  addFolderBtn.addEventListener('click', () => {
-    document.getElementById('folder-modal').style.display = 'block';
-    document.getElementById('folder-name').focus();
-  });
-  
-  // Reload folders
+  // Initial load
   loadFolders();
-}
 });
