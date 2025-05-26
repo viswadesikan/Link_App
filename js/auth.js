@@ -10,11 +10,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (action === 'signup') {
     authTitle.textContent = 'Sign Up';
     submitBtn.textContent = 'Sign Up';
-    authSwitch.innerHTML = 'Already have an account? <a href="auth.html?action=login">Login</a>';
+    authSwitch.innerHTML = 'Already have an account? <a href="/auth?action=login">Login</a>';
   } else {
     authTitle.textContent = 'Login';
     submitBtn.textContent = 'Login';
-    authSwitch.innerHTML = 'Don\'t have an account? <a href="auth.html?action=signup">Sign up</a>';
+    authSwitch.innerHTML = 'Don\'t have an account? <a href="/auth?action=signup">Sign up</a>';
   }
   
   authForm.addEventListener('submit', async (e) => {
@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const endpoint = action === 'signup' ? 'signup' : 'login';
     
     try {
-      const response = await fetch(`http://localhost:5000/api/auth/${endpoint}`, {
+      const response = await fetch(`/api/auth/${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       
       localStorage.setItem('token', data.token);
-      window.location.href = 'home.html';
+      window.location.href = '/home';
     } catch (err) {
       alert(err.message);
     }
