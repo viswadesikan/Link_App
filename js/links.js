@@ -199,62 +199,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   
- async function showLinks(folderId, folderName) {
-    try {
-      const response = await fetch(`/api/folders/${folderId}/links`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to load links');
-      }
-      
-      const links = await response.json();
-      
-      // Create links view
-      const main = document.querySelector('main');
-      main.innerHTML = `
-        <div class="links-view">
-          <h2 class="folder-title">${folderName}</h2>
-          <div class="links-container">
-            ${links.length ? 
-              links.map(link => {
-                try {
-                  const url = new URL(link);
-                  return `
-                    <div class="link-item">
-                      <a href="${link}" target="_blank">${url.hostname.replace('www.', '')}</a>
-                      <span class="link-url">${link}</span>
-                    </div>
-                  `;
-                } catch {
-                  return `
-                    <div class="link-item">
-                      <span class="invalid-link">${link}</span>
-                    </div>
-                  `;
-                }
-              }).join('') : 
-              '<p class="empty-message">No links in this folder yet</p>'}
-          </div>
-          <div class="back-button-container">
-            <button class="btn back-btn">← Back to Folders</button>
-          </div>
-        </div>
-      `;
-      
-      // Add back button event - fixed this part
-      document.querySelector('.back-btn').addEventListener('click', () => {
-        window.location.reload(); // This will take us back to the folders view
-      });
-    } catch (err) {
-      showError(err.message || 'Failed to load links');
-      console.error('Show links error:', err);
-    }
-}
   // Add these new functions
 async function deleteFolder(folderId) {
   if (!confirm('Are you sure you want to delete this folder and all its links?')) {
@@ -412,7 +356,7 @@ async function showLinks(folderId, folderName) {
       </div>
     `;
     
-    // Add delete event listeners to all link delete buttons
+    // Add delete event listeners
     document.querySelectorAll('.delete-link-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const linkIndex = e.currentTarget.getAttribute('data-index');
@@ -420,15 +364,41 @@ async function showLinks(folderId, folderName) {
       });
     });
     
-    // Back button
+    // Back button - FIXED VERSION
     document.querySelector('.back-btn').addEventListener('click', () => {
-      loadFolders();
+      // Clear the current view
+      const main = document.querySelector('main');
+      main.innerHTML = `
+        <div class="folders-container">
+          <div class="add-folder" id="add-folder-btn">
+            <i class="fas fa-plus"></i>
+          </div>
+        </div>
+      `;
+      
+      // Reinitialize the home view
+      initHomeView();
     });
+    
   } catch (err) {
     showError(err.message || 'Failed to load links');
     console.error('Show links error:', err);
   }
 }
-  // Initial load
+
+// Add this new function
+function initHomeView() {
+  // Re-get DOM elements since we recreated them
+  const addFolderBtn = document.getElementById('add-folder-btn');
+  const foldersContainer = document.querySelector('.folders-container');
+  
+  // Reattach event listeners
+  addFolderBtn.addEventListener('click', () => {
+    document.getElementById('folder-modal').style.display = 'block';
+    document.getElementById('folder-name').focus();
+  });
+  
+  // Reload folders
   loadFolders();
+}
 });
