@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const token = localStorage.getItem('token');
   
   if (!token) {
-    window.location.href = 'index.html';
+    window.location.href = '/';
     return;
   }
   
@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     try {
-      const response = await fetch('http://localhost:5000/api/folders', {
+      const response = await fetch('/api/folders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     try {
-      const response = await fetch(`http://localhost:5000/api/folders/${currentFolderId}/links`, {
+      const response = await fetch(`/api/folders/${currentFolderId}/links`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Functions
   async function loadFolders() {
     try {
-      const response = await fetch('http://localhost:5000/api/folders', {
+      const response = await fetch('/api/folders', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
  async function showLinks(folderId, folderName) {
     try {
-      const response = await fetch(`http://localhost:5000/api/folders/${folderId}/links`, {
+      const response = await fetch(`/api/folders/${folderId}/links`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -262,7 +262,7 @@ async function deleteFolder(folderId) {
   }
 
   try {
-    const response = await fetch(`http://localhost:5000/api/folders/${folderId}`, {
+    const response = await fetch(`/api/folders/${folderId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -287,7 +287,7 @@ async function deleteLink(folderId, linkIndex) {
   }
 
   try {
-    const response = await fetch(`http://localhost:5000/api/folders/${folderId}/links/${linkIndex}`, {
+    const response = await fetch(`/api/folders/${folderId}/links/${linkIndex}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -357,7 +357,7 @@ function renderFolders(folders) {
 // Update the showLinks function to include delete buttons for links
 async function showLinks(folderId, folderName) {
   try {
-    const response = await fetch(`http://localhost:5000/api/folders/${folderId}/links`, {
+    const response = await fetch(`/api/folders/${folderId}/links`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
