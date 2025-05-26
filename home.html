@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Link Storage - Home</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <h1>Link Storage</h1>
+    <button id="logout-btn">Logout</button>
+  </header>
+  <main>
+    <div class="folders-container">
+      <div class="add-folder" id="add-folder-btn">
+        <i class="fas fa-plus"></i>
+      </div>
+    </div>
+  </main>
+  
+  <!-- Folder Modal -->
+  <div id="folder-modal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Create New Folder</h2>
+      <input type="text" id="folder-name" placeholder="Folder name">
+      <button id="create-folder-btn">Create</button>
+    </div>
+  </div>
+  
+ <!-- Link Modal -->
+<div id="link-modal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h2>Add New Link</h2>
+    <input type="url" id="link-url" placeholder="https://example.com" required>
+    <button id="add-link-btn">Add Link</button>
+  </div>
+</div>
+  
+  <script src="js/links.js"></script>
+</body>
+</html>
